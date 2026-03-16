@@ -4,31 +4,30 @@
 // license that can be found at https://opensource.org/licenses/MIT
 
 /*
-Package crypto ports some of Ruby on Rails' crypto:
-  - version 4+: encrypted & signed messages (aes-cbc)
-  - version 5.2+: encrypted & authenticated messages (aes-256-gcm)
 
+Package crypto ports some of Ruby on Rails' crypto:
+  * version 4+: encrypted & signed messages (aes-cbc)
+  * version 5.2+: encrypted & authenticated messages (aes-256-gcm)
 Messages can be shared between a Ruby app and a Go app. That said, this
 library is useful to anyone wanting to encrypt/sign/authenticate data.
 
 The initial focus of this package was to be able to easily share a Rails web session with a Go
 app. Rails uses three classes provided by ActiveSupport (a library used
 and maintained by the Rails team)
-  - MessageEncryptor
-  - MessageVerifier
-  - KeyGenerator
-
+  * MessageEncryptor
+  * MessageVerifier
+  * KeyGenerator
 to encrypt and sign sessions. In order to read/write a cookie session,
 a Go app needs to be able to verify, decrypt/encrypt sign the session
 data based on a shared secret.
 
-# Key components of this package
+Key components of this package
 
 The main components of this package are:
 
-  - MessageEncryptor
-  - MessageVerifier
-  - KeyGenerator
+  * MessageEncryptor
+  * MessageVerifier
+  * KeyGenerator
 
 The difference between MessageVerifier and MessageEncryptor is that you
 want to use MessageEncryptor when you don't want the content of the data
@@ -39,12 +38,11 @@ Keygenerator is used to generate derived keys from a given secret.
 If you want to generate a random key that isn't derived, look at
 the GenerateRandomKey function.
 
-# Session serializer
+Session serializer
 
 Since Rails 5.2, the default session serializer can be set to use JSON by
 setting:
-
-	Rails.application.config.action_dispatch.cookies_serializer = :json.
+  Rails.application.config.action_dispatch.cookies_serializer = :json.
 
 In older Rails versions, it is necessary to make changes in order to move
 away from the default session serializer (Marhsal). To be able to share the
@@ -58,40 +56,40 @@ available JSON, XML and Null, the last serializer is basically a no-op
 serializer used when the data doesn't need serialization and can be
 transported as strings.
 
-# Rails session flow
+Rails session flow
 
 It's important to understand how Rails handles the crypto around the
 session.
 Here is a quick and high level of what Rails does (Ruby code):
 
-	# Secret set in the app.
-	secret_key_base = "f7b5763636f4c1f3ff4bd444eacccca295d87b990cc104124017ad70550edcfd22b8e89465338254e0b608592a9aac29025440bfd9ce53579835ba06a86f85f9"
+    # Secret set in the app.
+    secret_key_base = "f7b5763636f4c1f3ff4bd444eacccca295d87b990cc104124017ad70550edcfd22b8e89465338254e0b608592a9aac29025440bfd9ce53579835ba06a86f85f9"
 
-	# Rails 4+ / aes-cbc:
-	key_generator = ActiveSupport::CachingKeyGenerator.new(ActiveSupport::KeyGenerator.new(secret_key_base, iterations: 1000))
-	secret = key_generator.generate_key("encrypted cookie")
-	sign_secret = key_generator.generate_key("signed encrypted cookie")
+    # Rails 4+ / aes-cbc:
+    key_generator = ActiveSupport::CachingKeyGenerator.new(ActiveSupport::KeyGenerator.new(secret_key_base, iterations: 1000))
+    secret = key_generator.generate_key("encrypted cookie")
+    sign_secret = key_generator.generate_key("signed encrypted cookie")
 
-	encryptor = ActiveSupport::MessageEncryptor.new(secret, sign_secret, { serializer: JsonSessionSerializer } )
-	# encrypt and sign the content of the session:
-	encrypted_message = encryptor.encrypt_and_sign({msg: "hello world"})
-	# The encrypted and signed message is stored in the session cookie
-	# To decrypt and verify it:
-	# encryptor.decrypt_and_verify(encrypted_message) # => {:msg => "hello world"}
+    encryptor = ActiveSupport::MessageEncryptor.new(secret, sign_secret, { serializer: JsonSessionSerializer } )
+    # encrypt and sign the content of the session:
+    encrypted_message = encryptor.encrypt_and_sign({msg: "hello world"})
+    # The encrypted and signed message is stored in the session cookie
+    # To decrypt and verify it:
+    # encryptor.decrypt_and_verify(encrypted_message) # => {:msg => "hello world"}
 
-	# Rails 5.2+ / aes-256-gcm:
-	key_generator = ActiveSupport::CachingKeyGenerator.new(ActiveSupport::KeyGenerator.new(secret_key_base, iterations: 1000))
-	secret = key_generator.generate_key("authenticated encrypted cookie", 32)
-	encryptor = ActiveSupport::MessageEncryptor.new(secret, cipher: 'aes-256-gcm', serializer: JSON)
-	# encrypt and authenticate the content of the session:
-	encrypted_message = encryptor.encrypt_and_sign({msg: "hello world"})
-	# The encrypted and authenticated message is stored in the session cookie
-	# To authenticate and decrypt it:
-	# encryptor.decrypt_and_verify(encrypted_message) # => {:msg => "hello world"}
+    # Rails 5.2+ / aes-256-gcm:
+    key_generator = ActiveSupport::CachingKeyGenerator.new(ActiveSupport::KeyGenerator.new(secret_key_base, iterations: 1000))
+    secret = key_generator.generate_key("authenticated encrypted cookie", 32)
+    encryptor = ActiveSupport::MessageEncryptor.new(secret, cipher: 'aes-256-gcm', serializer: JSON)
+    # encrypt and authenticate the content of the session:
+    encrypted_message = encryptor.encrypt_and_sign({msg: "hello world"})
+    # The encrypted and authenticated message is stored in the session cookie
+    # To authenticate and decrypt it:
+    # encryptor.decrypt_and_verify(encrypted_message) # => {:msg => "hello world"}
 
 The equivalent in Go is available in the documentation examples: http://godoc.org/github.com/mattetti/goRailsYourself/crypto#pkg-examples
 
-# Derived keys
+Derived keys
 
 A few important things need to be mentioned. Rails uses a unique secret
 that is used to derive different keys using a default salt.
@@ -117,25 +115,25 @@ lets the OpenSSL wrapper truncate the key. I, however recommend you
 generate keys of different length to avoid any confusion.
 Here is an example for aes-cbc (Rails 4+):
 
-	railsSecret := "f7b5763636f4c1f3ff4bd444eacccca295d87b990cc104124017ad70550edcfd22b8e89465338254e0b608592a9aac29025440bfd9ce53579835ba06a86f85f9"
-	encryptedCookieSalt := []byte("encrypted cookie")
-	encryptedSignedCookieSalt := []byte("signed encrypted cookie")
+  railsSecret := "f7b5763636f4c1f3ff4bd444eacccca295d87b990cc104124017ad70550edcfd22b8e89465338254e0b608592a9aac29025440bfd9ce53579835ba06a86f85f9"
+  encryptedCookieSalt := []byte("encrypted cookie")
+  encryptedSignedCookieSalt := []byte("signed encrypted cookie")
 
-	kg := KeyGenerator{Secret: railsSecret}
-	secret := kg.CacheGenerate(encryptedCookieSalt, 32)
-	signSecret := kg.CacheGenerate(encryptedSignedCookieSalt, 64)
-	e := MessageEncryptor{Key: secret, SignKey: signSecret}
+  kg := KeyGenerator{Secret: railsSecret}
+  secret := kg.CacheGenerate(encryptedCookieSalt, 32)
+  signSecret := kg.CacheGenerate(encryptedSignedCookieSalt, 64)
+  e := MessageEncryptor{Key: secret, SignKey: signSecret}
 
 Here is an example for aes-256-gcm (Rails 5.2+):
 
-	railsSecret := "f7b5763636f4c1f3ff4bd444eacccca295d87b990cc104124017ad70550edcfd22b8e89465338254e0b608592a9aac29025440bfd9ce53579835ba06a86f85f9"
-	authenticatedCookieSalt := []byte("authenticated encrypted cookie")
+  railsSecret := "f7b5763636f4c1f3ff4bd444eacccca295d87b990cc104124017ad70550edcfd22b8e89465338254e0b608592a9aac29025440bfd9ce53579835ba06a86f85f9"
+  authenticatedCookieSalt := []byte("authenticated encrypted cookie")
 
-	kg := KeyGenerator{Secret: railsSecret}
-	secret := kg.CacheGenerate(authenticated, 32)
-	e := MessageEncryptor{Key: secret, Cipher: "aes-256-gcm"}
+  kg := KeyGenerator{Secret: railsSecret}
+  secret := kg.CacheGenerate(authenticated, 32)
+  e := MessageEncryptor{Key: secret, Cipher: "aes-256-gcm"}
 
-# Without Ruby
+Without Ruby
 
 The encryption used in Rails isn't specific to Ruby and this library can
 be used to communicate with apps that aren't in Ruby. As a matter of
@@ -146,5 +144,6 @@ has been tested and vested by many people and is safe to use.
 It is recommended that new applications use the "aes-256-gcm" mode rather
 than the "aes-cbc" mode, as the prior is a less error prone scheme and does
 not rely on now out of favor cryptographic primitives.
+
 */
 package crypto

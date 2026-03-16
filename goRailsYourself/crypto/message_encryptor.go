@@ -5,6 +5,7 @@ import (
 	"errors"
 )
 
+//
 // MessageEncryptor is a simple way to encrypt values which get stored
 // somewhere you don't trust.
 //
@@ -15,8 +16,8 @@ import (
 // where you don't want users to be able to determine the value of the payload.
 //
 // Different kind of ciphers are supported:
-//   - aes-cbc - Rails' default until 5.2, requires a verifier
-//   - aes-256-gcm - Rails 5.2+ default, ignores verifier.
+//  - aes-cbc - Rails' default until 5.2, requires a verifier
+//  - aes-256-gcm - Rails 5.2+ default, ignores verifier.
 //
 // Note: The old Rails default serializer, Marshal is neither safe or
 // portable across langauges, use the JSON serializer.
