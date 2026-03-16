@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/divoxx/goRailsYourself/crypto"
+	"github.com/doximity/cookies/goRailsYourself/crypto"
 )
 
 // CookieEncryptor implements cookie encryption and signing to allow securely storing sensitive
